@@ -1,11 +1,13 @@
 package com.iris.youtubevideo;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Environment;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -27,7 +29,10 @@ import com.iris.youtubevideo.lib.YouviderInfo;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Objects;
 
 
 public class ListActivity extends ActionBarActivity {
@@ -88,7 +93,7 @@ public class ListActivity extends ActionBarActivity {
 
     private void checkDownloadLink(String link) {
         final ProgressDialog progressDialog = new ProgressDialog(this);
-        progressDialog.setMessage("Getting video info ...");
+        progressDialog.setMessage("해당 영상이 다운로드 되어 있는지 확인중이니 기달리시죠");
         progressDialog.show();
         new AsyncTask<String, Void, YouviderInfo>() {
             private String videoLink="";
@@ -122,7 +127,7 @@ public class ListActivity extends ActionBarActivity {
 
     private void onDownloadLink(String link){
         final ProgressDialog progressDialog = new ProgressDialog(this);
-            progressDialog.setMessage("Getting video info ...");
+            progressDialog.setMessage("영상 다운로드 준비중입니다 기다리세요!");
             progressDialog.show();
             new AsyncTask<String, Void, YouviderInfo>() {
                 @Override
@@ -139,11 +144,11 @@ public class ListActivity extends ActionBarActivity {
                 protected void onPostExecute(YouviderInfo youviderInfo) {
                     super.onPostExecute(youviderInfo);
                     if (youviderInfo == null){
-                        showMessage("Could not parse video info");
+                        showMessage("비디오 변환 실패 전화주세요~");
                         return;
                     }
                     if (youviderInfo.encodedStreams == null || youviderInfo.encodedStreams.size() == 0){
-                        showMessage("Could not parse video stream");
+                        showMessage("비디오 변환 실패 전홪쉐요~2");
                         return;
                     }
                     progressDialog.hide();
@@ -159,6 +164,7 @@ public class ListActivity extends ActionBarActivity {
         EncodedStream stream = info.encodedStreams.get(0);
         String fileName = info.videoTitle == null ? "Unknown title video" : Utils.getSafeFileNameFor(info.videoTitle);
         fileName += "." + stream.itag.format.toLowerCase();
+
         String path = getExternalStoragePath() + File.separator + fileName;
 
         File file = new File(path);
@@ -174,25 +180,31 @@ public class ListActivity extends ActionBarActivity {
     }
 
     private void onReceiveDownloadInfo(final YouviderInfo info){
-        String[] streams = new String[info.encodedStreams.size()];
-//        for (int i=0; i<info.encodedStreams.size(); i++)
-            streams[0] = info.encodedStreams.get(0).itag.toString();
+//        String[] streams = new String[info.encodedStreams.size()];
+////        for (int i=0; i<info.encodedStreams.size(); i++)
+//            streams[0] = info.encodedStreams.get(0).itag.toString();
 
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Download video")
-                .setItems(streams, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int position) {
-                        showMessage("Choose " + position);
-                        EncodedStream stream = info.encodedStreams.get(position);
-                        String fileName = info.videoTitle == null ? "Unknown title video" : Utils.getSafeFileNameFor(info.videoTitle);
-                        fileName += "." + stream.itag.format.toLowerCase();
-                        String path = getExternalStoragePath() + File.separator + fileName;
-                        onChooseDownloadVideo(stream, path);
-                    }
-                })
-                .create();
-        dialog.show();
+        EncodedStream stream = info.encodedStreams.get(0);
+        String fileName = info.videoTitle == null ? "Unknown title video" : Utils.getSafeFileNameFor(info.videoTitle);
+        fileName += "." + stream.itag.format.toLowerCase();
+        String path = getExternalStoragePath() + File.separator + fileName;
+        onChooseDownloadVideo(stream, path);
+
+//        AlertDialog dialog = new AlertDialog.Builder(this)
+//                .setTitle("Download video")
+//                .setItems(streams, new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialogInterface, int position) {
+////                        showMessage("Choose " + position);
+//                        EncodedStream stream = info.encodedStreams.get(position);
+//                        String fileName = info.videoTitle == null ? "Unknown title video" : Utils.getSafeFileNameFor(info.videoTitle);
+//                        fileName += "." + stream.itag.format.toLowerCase();
+//                        String path = getExternalStoragePath() + File.separator + fileName;
+//                        onChooseDownloadVideo(stream, path);
+//                    }
+//                })
+//                .create();
+//        dialog.show();
     }
 
     private void onChooseDownloadVideo(final EncodedStream stream, final String path){
@@ -236,24 +248,36 @@ public class ListActivity extends ActionBarActivity {
     public  String getExternalStoragePath(){
         String path = null;
         try{
-            String str = Environment.getExternalStorageState();
-            if ( str.equals(Environment.MEDIA_MOUNTED)) {
+            File extSt = Environment.getExternalStorageDirectory();
+            int sdkVersion = Integer.parseInt(Build.VERSION.SDK);
+            if (sdkVersion < 8) {
 
-                File file = new File(SD_CARD_PATH);
-                if( !file.exists() )  // 원하는 경로에 폴더가 있는지 확인
-                    file.mkdirs();
-
-                return SD_CARD_PATH;
+                path = extSt.getAbsolutePath() + "/Android" + "/data"+ "/com.shoki";
+            } else {
+                path = getExternalFilesDir(null).getAbsolutePath();
             }
-            else {
-                path = LOCAL_PATH;
 
-                File file = new File(path);
-                if( !file.exists() )  // 원하는 경로에 폴더가 있는지 확인
-                    file.mkdirs();
+            return path;
 
-                return path;
-            }
+//
+//            String str = Environment.getExternalStorageState();
+//            if ( str.equals(Environment.MEDIA_MOUNTED)) {
+//
+//                File file = new File(SD_CARD_PATH);
+//                if( !file.exists() )  // 원하는 경로에 폴더가 있는지 확인
+//                    file.mkdirs();
+//
+//                return SD_CARD_PATH;
+//            }
+//            else {
+//                path = LOCAL_PATH;
+//
+//                File file = new File(path);
+//                if( !file.exists() )  // 원하는 경로에 폴더가 있는지 확인
+//                    file.mkdirs();
+//
+//                return path;
+//            }
 
         }catch (Exception ex){
             Toast.makeText(ListActivity.this, "SD Card 인식 실패", Toast.LENGTH_SHORT).show();
@@ -304,6 +328,53 @@ public class ListActivity extends ActionBarActivity {
             mListData.add(new ShokiDao(VideoUrl.video21.videoUrl, level, VideoUrl.video21.videoTitle));
             mListData.add(new ShokiDao(VideoUrl.video22.videoUrl, level, VideoUrl.video22.videoTitle));
             mListData.add(new ShokiDao(VideoUrl.video23.videoUrl, level, VideoUrl.video23.videoTitle));
+
+//            final Dialog dialog = new Dialog(this);
+//            dialog.show();
+//            new AsyncTask<ArrayList<ShokiDao>, Void, HashMap<String, Boolean>>() {
+//                @Override
+//                protected HashMap<String, Boolean> doInBackground(ArrayList<ShokiDao>... links) {
+//                    try {
+//                        HashMap<String, Boolean> resultMap = new HashMap<String, Boolean>();
+//                        for(int i = 0 ; i < links[0].size(); i ++) {
+//                            YouviderInfo info = Youvider.getVideoInfo(links[0].get(i).getVideoUrl());
+//
+//                            String[] streams = new String[info.encodedStreams.size()];
+//                            streams[0] = info.encodedStreams.get(0).itag.toString();
+//                            EncodedStream stream = info.encodedStreams.get(0);
+//                            String fileName = info.videoTitle == null ? "Unknown title video" : Utils.getSafeFileNameFor(info.videoTitle);
+//                            fileName += "." + stream.itag.format.toLowerCase();
+//
+//                            String path = getExternalStoragePath() + File.separator + fileName;
+//
+//                            File file = new File(path);
+//                            if(file.exists()) {
+//                                resultMap.put(links[0].get(i).getTitle(), true);
+//                            }
+//                            else {
+//                                resultMap.put(links[0].get(i).getTitle(), false);
+//                            }
+//                        }
+//                        return resultMap;
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                    return null;
+//                }
+//
+//                @Override
+//                protected void onPostExecute(HashMap<String, Boolean> result) {
+//                    super.onPostExecute(result);
+//                    dialog.dismiss();
+//                    for(int i = 0 ; i < mListData.size() ; i ++) {
+//                        ShokiDao item = mListData.get(i);
+//                        item.setDownLoaderYn(result.get(mListData.get(i).getTitle()));
+//                        mListData.set(i, item);
+//                    }
+//
+//                    mListiView.setAdapter(mListAdapter);
+//                }
+//            }.execute(mListData);
         }
 
         mListiView.setAdapter(mListAdapter);

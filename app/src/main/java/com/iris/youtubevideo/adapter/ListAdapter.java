@@ -47,11 +47,17 @@ public class ListAdapter extends BaseAdapter {
         if ( convertView == null ) {
             LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             convertView = inflater.inflate(R.layout.item_list, parent, false);
-
-
         }
         TextView text = ViewHolder.get(convertView, R.id.item_list_title_txt);
+//        if(mListData.get(position).isDownLoaderYn()) {
+//            text.setText(mListData.get(position).getTitle());
+//        }
+//        else {
+//            text.setText(mListData.get(position).getTitle()+" 다운로드 필요");
+//        }
         text.setText(mListData.get(position).getTitle());
+
+
         return convertView;
     }
 }
